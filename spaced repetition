@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spaced Repetition Tracker</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f4f7fb;
+        --panel: #ffffff;
+        --text: #14213d;
+        --muted: #5b6475;
+        --accent: #2563eb;
+        --accent-2: #1d4ed8;
+        --border: #d8e2f0;
+        --danger: #dc2626;
+        --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      }
+
+      body.dark {
+        --bg: #0f172a;
+        --panel: #111827;
+        --text: #f8fafc;
+        --muted: #cbd5e1;
+        --accent: #60a5fa;
+        --accent-2: #3b82f6;
+        --border: #334155;
+        --danger: #f87171;
+        --shadow: 0 10px 30px rgba(2, 6, 23, 0.4);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        transition: background 0.2s ease, color 0.2s ease;
+      }
+
+      .app {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+
+      .topbar h1 {
+        margin: 0;
+        font-size: clamp(1.4rem, 2vw, 1.8rem);
+      }
+
+      .topbar p {
+        margin: 4px 0 0;
+        color: var(--muted);
+      }
+
+      .icon-btn,
+      button,
+      input {
+        font: inherit;
+      }
+
+      .icon-btn {
+        border: 1px solid var(--border);
+        background: var(--panel);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+        box-shadow: var(--shadow);
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+        margin-bottom: 16px;
+      }
+
+      form {
+        display: grid;
+        gap: 12px;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      label {
+        font-weight: 600;
+      }
+
+      input {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: transparent;
+        color: var(--text);
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .primary {
+        background: var(--accent);
+        color: white;
+      }
+
+      .primary:hover {
+        background: var(--accent-2);
+      }
+
+      .secondary {
+        background: #e2e8f0;
+        color: #0f172a;
+      }
+
+      body.dark .secondary {
+        background: #334155;
+        color: #f8fafc;
+      }
+
+      .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .section-title h2 {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+
+      .pill {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #dbeafe;
+        color: #1d4ed8;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      body.dark .pill {
+        background: rgba(96, 165, 250, 0.16);
+        color: #bfdbfe;
+      }
+
+      .list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .meta {
+        color: var(--muted);
+        font-size: 0.92rem;
+        margin-top: 4px;
+      }
+
+      .date-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .date-chip {
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--accent-2);
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+      }
+
+      body.dark .date-chip {
+        background: rgba(96, 165, 250, 0.16);
+        color: #bfdbfe;
+      }
+
+      .card-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 120px;
+      }
+
+      .danger {
+        background: rgba(220, 38, 38, 0.1);
+        color: var(--danger);
+      }
+
+      .empty {
+        text-align: center;
+        color: var(--muted);
+        padding: 16px 0;
+      }
+
+      @media (max-width: 700px) {
+        .card {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .card-actions {
+          width: 100%;
+          flex-direction: row;
+        }
+
+        .card-actions button {
+          flex: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <h1>Spaced Repetition Tracker</h1>
+          <p>Track what needs review and keep your study rhythm steady.</p>
+        </div>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode">🌙</button>
+      </header>
+
+      <section class="panel">
+        <form id="topicForm">
+          <div class="field">
+            <label for="topicInput">Topic</label>
+            <input id="topicInput" name="topic" required maxlength="60" placeholder="Example: JavaScript closures" />
+          </div>
+          <div class="field">
+            <label for="reviewDate">Last Reviewed</label>
+            <input id="reviewDate" name="reviewDate" type="date" required />
+          </div>
+          <div class="actions">
+            <button class="primary" type="submit">Add Topic</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2>Due Today</h2>
+          <span id="dueCount" class="pill">0</span>
+        </div>
+        <div id="dueList" class="list"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2>All Topics</h2>
+          <span id="topicCount" class="pill">0</span>
+        </div>
+        <div id="topicList" class="list"></div>
+      </section>
+    </main>
+
+    <script>
+      const STORAGE_KEY = 'spaced-repetition-tracker';
+      const THEME_KEY = 'spaced-repetition-theme';
+      const topicForm = document.getElementById('topicForm');
+      const topicInput = document.getElementById('topicInput');
+      const reviewDateInput = document.getElementById('reviewDate');
+      const topicList = document.getElementById('topicList');
+      const dueList = document.getElementById('dueList');
+      const dueCount = document.getElementById('dueCount');
+      const topicCount = document.getElementById('topicCount');
+      const themeToggle = document.getElementById('themeToggle');
+
+      let topics = [];
+      let darkMode = false;
+
+      function todayString() {
+        return new Date().toISOString().split('T')[0];
+      }
+
+      function formatDate(dateString) {
+        const date = new Date(dateString + 'T00:00:00');
+        return date.toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+      }
+
+      function addDays(dateString, days) {
+        const date = new Date(dateString + 'T00:00:00');
+        date.setDate(date.getDate() + days);
+        return date.toISOString().split('T')[0];
+      }
+
+      function loadTheme() {
+        const savedTheme = localStorage.getItem(THEME_KEY);
+        darkMode = savedTheme === 'dark';
+        document.body.classList.toggle('dark', darkMode);
+        themeToggle.textContent = darkMode ? '☀️' : '🌙';
+      }
+
+      function saveTheme() {
+        localStorage.setItem(THEME_KEY, darkMode ? 'dark' : 'light');
+        themeToggle.textContent = darkMode ? '☀️' : '🌙';
+      }
+
+      function loadTopics() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) {
+          topics = [];
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(stored);
+          topics = Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+          topics = [];
+        }
+      }
+
+      function saveTopics() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(topics));
+      }
+
+      function getDueDates(topic) {
+        const baseDate = topic.lastReviewed;
+        return {
+          day3: addDays(baseDate, 3),
+          day7: addDays(baseDate, 7),
+          day14: addDays(baseDate, 14),
+          day30: addDays(baseDate, 30)
+        };
+      }
+
+      function isDueToday(topic) {
+        const today = todayString();
+        const dueDates = getDueDates(topic);
+        return [dueDates.day3, dueDates.day7, dueDates.day14, dueDates.day30].includes(today);
+      }
+
+      function render() {
+        const today = todayString();
+        const dueTopics = topics.filter(isDueToday);
+
+        dueCount.textContent = dueTopics.length;
+        topicCount.textContent = topics.length;
+
+        if (dueTopics.length === 0) {
+          dueList.innerHTML = '<div class="empty">No topics are due today.</div>';
+        } else {
+          dueList.innerHTML = dueTopics.map(topic => {
+            const dueDates = getDueDates(topic);
+            const dueChips = Object.entries(dueDates)
+              .map(([label, date]) => `${label}: ${date === today ? '<strong>' + date + '</strong>' : date}`)
+              .join(' • ');
+
+            return `
+              <article class="card">
+                <div>
+                  <strong>${escapeHtml(topic.topic)}</strong>
+                  <div class="meta">Last reviewed ${formatDate(topic.lastReviewed)}</div>
+                  <div class="date-grid">
+                    <span class="date-chip">Day 3: ${dueDates.day3}</span>
+                    <span class="date-chip">Day 7: ${dueDates.day7}</span>
+                    <span class="date-chip">Day 14: ${dueDates.day14}</span>
+                    <span class="date-chip">Day 30: ${dueDates.day30}</span>
+                  </div>
+                </div>
+                <div class="card-actions">
+                  <button class="primary" type="button" data-action="review" data-id="${topic.id}">Reviewed Today</button>
+                  <button class="danger" type="button" data-action="delete" data-id="${topic.id}">Delete</button>
+                </div>
+              </article>
+            `;
+          }).join('');
+        }
+
+        if (topics.length === 0) {
+          topicList.innerHTML = '<div class="empty">No topics yet. Add one to begin.</div>';
+        } else {
+          topicList.innerHTML = topics.map(topic => {
+            const dueDates = getDueDates(topic);
+            return `
+              <article class="card">
+                <div>
+                  <strong>${escapeHtml(topic.topic)}</strong>
+                  <div class="meta">Last reviewed ${formatDate(topic.lastReviewed)}</div>
+                  <div class="date-grid">
+                    <span class="date-chip">Day 3: ${dueDates.day3}</span>
+                    <span class="date-chip">Day 7: ${dueDates.day7}</span>
+                    <span class="date-chip">Day 14: ${dueDates.day14}</span>
+                    <span class="date-chip">Day 30: ${dueDates.day30}</span>
+                  </div>
+                </div>
+                <div class="card-actions">
+                  <button class="primary" type="button" data-action="review" data-id="${topic.id}">Reviewed Today</button>
+                  <button class="danger" type="button" data-action="delete" data-id="${topic.id}">Delete</button>
+                </div>
+              </article>
+            `;
+          }).join('');
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function addTopic(topicName, reviewDate) {
+        const trimmed = topicName.trim();
+        if (!trimmed) return;
+
+        topics.unshift({
+          id: Date.now().toString(),
+          topic: trimmed,
+          lastReviewed: reviewDate
+        });
+        saveTopics();
+        render();
+      }
+
+      function reviewTopic(id) {
+        topics = topics.map(topic => topic.id === id ? { ...topic, lastReviewed: todayString() } : topic);
+        saveTopics();
+        render();
+      }
+
+      function deleteTopic(id) {
+        topics = topics.filter(topic => topic.id !== id);
+        saveTopics();
+        render();
+      }
+
+      topicForm.addEventListener('submit', event => {
+        event.preventDefault();
+        const topicName = topicInput.value;
+        const reviewDate = reviewDateInput.value || todayString();
+        addTopic(topicName, reviewDate);
+        topicForm.reset();
+        reviewDateInput.value = todayString();
+        topicInput.focus();
+      });
+
+      document.addEventListener('click', event => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+
+        const { action, id } = button.dataset;
+        if (action === 'review') {
+          reviewTopic(id);
+        } else if (action === 'delete') {
+          deleteTopic(id);
+        }
+      });
+
+      themeToggle.addEventListener('click', () => {
+        darkMode = !darkMode;
+        document.body.classList.toggle('dark', darkMode);
+        saveTheme();
+      });
+
+      reviewDateInput.value = todayString();
+      loadTheme();
+      loadTopics();
+      render();
+    </script>
+  </body>
+</html>

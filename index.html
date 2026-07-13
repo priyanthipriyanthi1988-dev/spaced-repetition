@@ -307,14 +307,37 @@
 
       let topics = [];
       let darkMode = false;
+      const TIME_ZONE = 'Asia/Colombo';
+
+      function formatDateParts(date, timeZone = TIME_ZONE) {
+        const formatter = new Intl.DateTimeFormat('en-CA', {
+          timeZone,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+
+        const parts = formatter.formatToParts(date);
+        return {
+          year: parts.find(part => part.type === 'year').value,
+          month: parts.find(part => part.type === 'month').value,
+          day: parts.find(part => part.type === 'day').value
+        };
+      }
+
+      function toDateString(date, timeZone = TIME_ZONE) {
+        const { year, month, day } = formatDateParts(date, timeZone);
+        return `${year}-${month}-${day}`;
+      }
 
       function todayString() {
-        return new Date().toISOString().split('T')[0];
+        return toDateString(new Date());
       }
 
       function formatDate(dateString) {
-        const date = new Date(dateString + 'T00:00:00');
+        const date = new Date(`${dateString}T00:00:00+05:30`);
         return date.toLocaleDateString(undefined, {
+          timeZone: TIME_ZONE,
           month: 'short',
           day: 'numeric',
           year: 'numeric'
@@ -322,9 +345,9 @@
       }
 
       function addDays(dateString, days) {
-        const date = new Date(dateString + 'T00:00:00');
-        date.setDate(date.getDate() + days);
-        return date.toISOString().split('T')[0];
+        const date = new Date(`${dateString}T00:00:00+05:30`);
+        date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+        return toDateString(date);
       }
 
       function loadTheme() {
@@ -361,10 +384,10 @@
       function getDueDates(topic) {
         const baseDate = topic.lastReviewed;
         return {
-          day3: addDays(baseDate, 3),
-          day7: addDays(baseDate, 7),
-          day14: addDays(baseDate, 14),
-          day30: addDays(baseDate, 30)
+          day3: addDays(baseDate, 1),
+          day7: addDays(baseDate, 3),
+          day14: addDays(baseDate, 7),
+          day30: addDays(baseDate, 14)
         };
       }
 
